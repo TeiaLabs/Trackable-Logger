@@ -1,14 +1,15 @@
 import logging
 import secrets
 
-from . import GLOBAL_LOGGER
+from . import GLOBAL_CONFIG
 
 
 class LoggerClass:
-    def __init__(self, module_name: str, function_name: str):
-        self.module_name = module_name
-        self.function_name = function_name
+    def __init__(self, **extra):
         self.unique_id = secrets.token_urlsafe(10)
+        self.extra = {}
+        if extra:
+            self.extra = extra
 
     def debug(self, message: str) -> None:
         self._log(logging.DEBUG, message)
@@ -26,8 +27,4 @@ class LoggerClass:
         self._log(logging.CRITICAL, message)
 
     def _log(self, level: int, message: str) -> None:
-        GLOBAL_LOGGER.log(level, message, extra=dict(
-            resource=self.module_name,
-            method=self.function_name,
-            unique_id=self.unique_id,
-        ))
+        GLOBAL_CONFIG.logger.log(level, message, extra={**self.extra, "unique_id": self.unique_id})

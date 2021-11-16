@@ -1,0 +1,4 @@
+
+
+class LoggerNotFound(Exception):
+    pass
