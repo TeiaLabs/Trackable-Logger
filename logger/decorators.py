@@ -14,6 +14,7 @@ def track_log(
         logging_keys=None,
         search_depth=20,
         log_execution_time=True,
+        log_output=True,
         log_exception=True
 ):
 
@@ -29,7 +30,7 @@ def track_log(
             if init_logger:
                 search_depth = 0
 
-            logger = __get_logger_from_func(create_if_not_exist, search_depth, logging_keys, func)
+            logger = __get_logger_from_func(create_if_not_exist, search_depth, logging_keys)
             __save_logger_to_func(logger)
 
             if "logger" in args_names:
@@ -41,17 +42,23 @@ def track_log(
                 __set_logging_keys(logger, func, logging_keys)
 
             try:
+                start = time.time()
+
+                response = await func(*args, **kwargs)
+
+                end = time.time()
+
+                log = ""
                 if log_execution_time:
-                    start = time.time()
+                    log = f"finished after={end - start}"
 
-                    response = await func(*args, **kwargs)
+                if log_output:
+                    log += f"with output={prettify(response)}"
 
-                    end = time.time()
-                    logger.info(f"finished after={end - start} with output={prettify(response)}")
+                if log:
+                    logger.info(log)
 
-                    return response
-
-                return await func(*args, **kwargs)
+                return response
 
             except BaseException as e:
                 if log_exception:
@@ -69,7 +76,7 @@ def __save_logger_to_func(logger: LoggerClass) -> None:
     current.f_locals["logger"] = logger
 
 
-def __get_logger_from_func(create_if_not_exits, search_depth, logging_keys, func) -> LoggerClass:
+def __get_logger_from_func(create_if_not_exits, search_depth, logging_keys) -> LoggerClass:
     logger = None
     depth = 0
     caller_wrapper = inspect.currentframe().f_back.f_back
